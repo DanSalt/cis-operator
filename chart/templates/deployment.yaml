@@ -44,6 +44,8 @@ spec:
         {{- if .Values.securityScanJob.overrideTolerations }}
         - name: SECURITY_SCAN_JOB_TOLERATIONS
           value: '{{ .Values.securityScanJob.tolerations | toJson  }}'
+        - name: CIS_OPERATOR_NAMESPACE
+          value: '{{ template "cis.namespace" . }}'
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}

@@ -52,6 +52,7 @@ var (
 	sonobuoyImageTag              string
 	clusterName                   string
 	securityScanJobTolerationsVal string
+	namespace                     string
 )
 
 func main() {
@@ -134,6 +135,12 @@ func main() {
 			Name:    "alertEnabled",
 			EnvVars: []string{"CIS_ALERTS_ENABLED"},
 		},
+		&cli.StringFlag{
+			Name:        "namespace",
+			EnvVars:     []string{"CIS_OPERATOR_NAMESPACE"},
+			Value:       cisoperatorapiv1.DefaultClusterScanNS,
+			Destination: &namespace,
+		},
 	}
 	app.Action = run
 
@@ -195,7 +202,7 @@ func run(c *cli.Context) error {
 		logrus.Fatalf("Error starting CIS-Operator: %v", err)
 	}
 
-	ctl, err := cisoperator.NewController(ctx, kubeConfig, cisoperatorapiv1.ClusterScanNS, name, imgConfig, securityScanJobTolerations)
+	ctl, err := cisoperator.NewController(ctx, kubeConfig, c.String("namespace"), name, imgConfig, securityScanJobTolerations)
 	if err != nil {
 		logrus.Fatalf("Error building controller: %s", err.Error())
 	}

@@ -51,12 +51,12 @@ func readFromEnv(key string, defaultValue int32) int32 {
 }
 
 func New(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisoperatorapiv1.ClusterScanProfile, clusterscanbenchmark *cisoperatorapiv1.ClusterScanBenchmark,
-	controllerName string, imageConfig *cisoperatorapiv1.ScanImageConfig, configmapsClient wcorev1.ConfigMapController, tolerations []corev1.Toleration) *batchv1.Job {
+	controllerName string, clusterScanNS string, imageConfig *cisoperatorapiv1.ScanImageConfig, configmapsClient wcorev1.ConfigMapController, tolerations []corev1.Toleration) *batchv1.Job {
 	privileged := true
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name.SafeConcatName("security-scan-runner", clusterscan.Name),
-			Namespace:   cisoperatorapiv1.ClusterScanNS,
+			Namespace:   clusterScanNS,
 			Annotations: labels.Set{},
 			Labels: labels.Set{
 				cisoperatorapi.LabelController:  controllerName,
@@ -180,7 +180,7 @@ func New(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisopera
 							Value: clusterscanprofile.Spec.BenchmarkVersion,
 						}, {
 							Name:  `SONOBUOY_NS`,
-							Value: cisoperatorapiv1.ClusterScanNS,
+							Value: clusterScanNS,
 						}, {
 							Name: `SONOBUOY_POD_NAME`,
 							ValueFrom: &corev1.EnvVarSource{
@@ -268,7 +268,7 @@ func New(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisopera
 		job.Spec.Template.Spec.Containers[0].Env = append(job.Spec.Template.Spec.Containers[0].Env, configDirEnv)
 
 		//add the volume
-		customcm, err := loadCustomBenchmarkConfigMap(clusterscanbenchmark, clusterscan, configmapsClient)
+		customcm, err := loadCustomBenchmarkConfigMap(clusterScanNS, clusterscanbenchmark, clusterscan, configmapsClient)
 		if err != nil {
 			logrus.Errorf("Error loading custom CustomBenchmarkConfigMap %v %v", clusterscanbenchmark.Spec.CustomBenchmarkConfigMapNamespace, clusterscanbenchmark.Spec.CustomBenchmarkConfigMapName)
 			return job
@@ -302,16 +302,16 @@ func New(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisopera
 	return job
 }
 
-func loadCustomBenchmarkConfigMap(benchmark *cisoperatorapiv1.ClusterScanBenchmark, clusterscan *cisoperatorapiv1.ClusterScan, configmapsClient wcorev1.ConfigMapController) (*corev1.ConfigMap, error) {
+func loadCustomBenchmarkConfigMap(clusterScanNS string, benchmark *cisoperatorapiv1.ClusterScanBenchmark, clusterscan *cisoperatorapiv1.ClusterScan, configmapsClient wcorev1.ConfigMapController) (*corev1.ConfigMap, error) {
 	if benchmark.Spec.CustomBenchmarkConfigMapName == "" {
 		return nil, nil
 	}
-	if benchmark.Spec.CustomBenchmarkConfigMapNamespace == cisoperatorapiv1.ClusterScanNS {
-		return configmapsClient.Get(cisoperatorapiv1.ClusterScanNS, benchmark.Spec.CustomBenchmarkConfigMapName, metav1.GetOptions{})
+	if benchmark.Spec.CustomBenchmarkConfigMapNamespace == clusterScanNS {
+		return configmapsClient.Get(clusterScanNS, benchmark.Spec.CustomBenchmarkConfigMapName, metav1.GetOptions{})
 	}
 	//get copy of the configmap in ClusterScanNS created while creating plugin configmap
 	cmName := name.SafeConcatName(cisoperatorapiv1.CustomBenchmarkConfigMap, clusterscan.Name)
-	configmapCopy, err := configmapsClient.Get(cisoperatorapiv1.ClusterScanNS, cmName, metav1.GetOptions{})
+	configmapCopy, err := configmapsClient.Get(clusterScanNS, cmName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

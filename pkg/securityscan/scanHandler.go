@@ -116,7 +116,7 @@ func (c *Controller) handleClusterScans(ctx context.Context) error {
 					return objects, obj.Status, fmt.Errorf("Retrying ClusterScan %v since got error: %w", obj.Name, err)
 				}
 
-				objects = append(objects, cisjob.New(obj, profile, benchmark, c.Name, c.ImageConfig, c.configmaps, c.securityScanJobTolerations), cmMap["configcm"], cmMap["plugincm"], cmMap["skipConfigcm"], service)
+				objects = append(objects, cisjob.New(obj, profile, benchmark, c.Name, c.Namespace, c.ImageConfig, c.configmaps, c.securityScanJobTolerations), cmMap["configcm"], cmMap["plugincm"], cmMap["skipConfigcm"], service)
 
 				if c.ImageConfig.AlertEnabled &&
 					obj.Spec.ScheduledScanConfig != nil &&
@@ -128,7 +128,7 @@ func (c *Controller) handleClusterScans(ctx context.Context) error {
 						v1.ClusterScanConditionReconciling.True(obj)
 						return objects, obj.Status, fmt.Errorf("Error when trying to create a PrometheusRule: %w", err)
 					}
-					ruleCreated, err := c.monitoringClient.PrometheusRules(v1.ClusterScanNS).Create(ctx, alertRule, metav1.CreateOptions{})
+					ruleCreated, err := c.monitoringClient.PrometheusRules(c.Namespace).Create(ctx, alertRule, metav1.CreateOptions{})
 					if err != nil {
 						logrus.Errorf("Alerts will not be sent out for this scan %v due to this error when creating PrometheusRule: %v", obj.Name, err)
 					} else {
@@ -208,7 +208,7 @@ func (c *Controller) getClusterScanBenchmark(profile *v1.ClusterScanProfile) (*v
 func (c *Controller) getDefaultClusterScanProfile(clusterprovider string, clusterK8sVersion string) (string, error) {
 	var err error
 	configmaps := c.coreFactory.Core().V1().ConfigMap()
-	cm, err := configmaps.Cache().Get(v1.ClusterScanNS, v1.DefaultClusterScanProfileConfigMap)
+	cm, err := configmaps.Cache().Get(c.Namespace, v1.DefaultClusterScanProfileConfigMap)
 	if err != nil {
 		return "", fmt.Errorf("Configmap to load default ClusterScanProfiles not found: %w", err)
 	}
@@ -298,7 +298,7 @@ func (c Controller) validateClusterScanProfile(profile *v1.ClusterScanProfile) e
 }
 
 func (c Controller) isRunnerPodPresent() error {
-	v2Jobs, err := c.listScanRunnerJobs(v1.ClusterScanNS)
+	v2Jobs, err := c.listScanRunnerJobs(c.Namespace)
 	if err != nil {
 		return fmt.Errorf("error listing jobs: %w", err)
 	}
@@ -306,7 +306,7 @@ func (c Controller) isRunnerPodPresent() error {
 		return fmt.Errorf("A rancher-cis-benchmark scan runner job is already running")
 	}
 
-	v2Pods, err := c.listRunnerPods(v1.ClusterScanNS)
+	v2Pods, err := c.listRunnerPods(c.Namespace)
 	if err != nil {
 		return fmt.Errorf("error listing pods: %w", err)
 	}

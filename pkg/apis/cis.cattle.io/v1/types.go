@@ -14,7 +14,7 @@ const (
 	ClusterProviderK3s = "k3s"
 
 	CISV1NS                            = "security-scan"
-	ClusterScanNS                      = "cis-operator-system"
+	DefaultClusterScanNS               = "cis-operator-system"
 	ClusterScanSA                      = "cis-serviceaccount"
 	ClusterScanConfigMap               = "cis-s-config-cm"
 	ClusterScanPluginsConfigMap        = "cis-s-plugins-cm"

@@ -15,7 +15,7 @@ var serviceTemplate string
 func NewService(clusterscan *cisoperatorapiv1.ClusterScan, _ *cisoperatorapiv1.ClusterScanProfile, _ string) (service *corev1.Service, err error) {
 
 	servicedata := map[string]interface{}{
-		"namespace": cisoperatorapiv1.ClusterScanNS,
+		"namespace": clusterscan.Namespace,
 		"name":      cisoperatorapiv1.ClusterScanService,
 		"runName":   name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":   "rancher-cis-benchmark",

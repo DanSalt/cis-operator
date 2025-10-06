@@ -131,7 +131,7 @@ func (c *Controller) getScanResults(ctx context.Context, scan *v1.ClusterScan) (
 	configmaps := c.coreFactory.Core().V1().ConfigMap()
 	//get the output configmap and create a report
 	outputConfigName := strings.Join([]string{`cisscan-output-for`, scan.Name}, "-")
-	cm, err := configmaps.Cache().Get(v1.ClusterScanNS, outputConfigName)
+	cm, err := configmaps.Cache().Get(c.Namespace, outputConfigName)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cisScanHandler: Updated: error fetching configmap %v: %v", outputConfigName, err)
 	}
@@ -205,7 +205,7 @@ func (c *Controller) ensureCleanup(scan *v1.ClusterScan) error {
 	var err error
 	// Delete the dameonset
 	dsPrefix := "sonobuoy-rancher-kube-bench-daemon-set"
-	dsList, err := c.daemonsetCache.List(v1.ClusterScanNS, labels.Set(sonobuoyWorkerLabel).AsSelector())
+	dsList, err := c.daemonsetCache.List(c.Namespace, labels.Set(sonobuoyWorkerLabel).AsSelector())
 	if err != nil {
 		return fmt.Errorf("cis: ensureCleanup: error listing daemonsets: %w", err)
 	}
@@ -213,14 +213,14 @@ func (c *Controller) ensureCleanup(scan *v1.ClusterScan) error {
 		if !strings.HasPrefix(ds.Name, dsPrefix) {
 			continue
 		}
-		if e := c.daemonsets.Delete(v1.ClusterScanNS, ds.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
+		if e := c.daemonsets.Delete(c.Namespace, ds.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
 			return fmt.Errorf("cis: ensureCleanup: error deleting daemonset %v: %v", ds.Name, e)
 		}
 	}
 
 	// Delete the pod
 	podPrefix := name.SafeConcatName("security-scan-runner", scan.Name)
-	podList, err := c.podCache.List(v1.ClusterScanNS, labels.Set(SonobuoyMasterLabel).AsSelector())
+	podList, err := c.podCache.List(c.Namespace, labels.Set(SonobuoyMasterLabel).AsSelector())
 	if err != nil {
 		return fmt.Errorf("cis: ensureCleanup: error listing pods: %w", err)
 	}
@@ -228,13 +228,13 @@ func (c *Controller) ensureCleanup(scan *v1.ClusterScan) error {
 		if !strings.HasPrefix(pod.Name, podPrefix) {
 			continue
 		}
-		if e := c.pods.Delete(v1.ClusterScanNS, pod.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
+		if e := c.pods.Delete(c.Namespace, pod.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
 			return fmt.Errorf("cis: ensureCleanup: error deleting pod %v: %w", pod.Name, e)
 		}
 	}
 
 	// Delete cms
-	cms, err := c.configMapCache.List(v1.ClusterScanNS, labels.NewSelector())
+	cms, err := c.configMapCache.List(c.Namespace, labels.NewSelector())
 	if err != nil {
 		return fmt.Errorf("cis: ensureCleanup: error listing cm: %w", err)
 	}
@@ -243,7 +243,7 @@ func (c *Controller) ensureCleanup(scan *v1.ClusterScan) error {
 			continue
 		}
 
-		if e := c.configmaps.Delete(v1.ClusterScanNS, cm.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
+		if e := c.configmaps.Delete(c.Namespace, cm.Name, &metav1.DeleteOptions{}); e != nil && !errors.IsNotFound(e) {
 			return fmt.Errorf("cis: ensureCleanup: error deleting cm %v: %w", cm.Name, e)
 		}
 	}

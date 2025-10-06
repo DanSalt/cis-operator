@@ -35,7 +35,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 	cmMap = make(map[string]*corev1.ConfigMap)
 
 	configdata := map[string]interface{}{
-		"namespace":        cisoperatorapiv1.ClusterScanNS,
+		"namespace":        clusterscan.Namespace,
 		"name":             name.SafeConcatName(cisoperatorapiv1.ClusterScanConfigMap, clusterscan.Name),
 		"runName":          name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":          "rancher-cis-benchmark",
@@ -63,7 +63,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 	}
 
 	plugindata := map[string]interface{}{
-		"namespace":                    cisoperatorapiv1.ClusterScanNS,
+		"namespace":                    clusterscan.Namespace,
 		"name":                         name.SafeConcatName(cisoperatorapiv1.ClusterScanPluginsConfigMap, clusterscan.Name),
 		"runName":                      name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":                      "rancher-cis-benchmark",
@@ -89,7 +89,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 		if err != nil {
 			return cmMap, err
 		}
-		skipConfigcm = getConfigMapObject(getOverrideConfigMapName(clusterscan), string(skipDataBytes))
+		skipConfigcm = getConfigMapObject(getOverrideConfigMapName(clusterscan), clusterscan.Namespace, string(skipDataBytes))
 		cmMap["skipConfigcm"] = skipConfigcm
 	}
 
@@ -134,7 +134,7 @@ func getOverrideSkipInfoData(skip []string) ([]byte, error) {
 	return json.Marshal(s)
 }
 
-func getConfigMapObject(cmName, data string) *corev1.ConfigMap {
+func getConfigMapObject(cmName, cnNamespace, data string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -142,7 +142,7 @@ func getConfigMapObject(cmName, data string) *corev1.ConfigMap {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cmName,
-			Namespace: cisoperatorapiv1.ClusterScanNS,
+			Namespace: cnNamespace,
 		},
 		Data: map[string]string{
 			ConfigFileName: data,
@@ -158,7 +158,7 @@ func getCustomBenchmarkConfigMap(benchmark *cisoperatorapiv1.ClusterScanBenchmar
 	if err != nil {
 		return nil, err
 	}
-	if benchmark.Spec.CustomBenchmarkConfigMapNamespace == cisoperatorapiv1.ClusterScanNS {
+	if benchmark.Spec.CustomBenchmarkConfigMapNamespace == clusterscan.Namespace {
 		return userConfigmap, nil
 	}
 	//copy the configmap to ClusterScanNS so that cis scan pod can find it for volume mount
@@ -170,7 +170,7 @@ func getCustomBenchmarkConfigMap(benchmark *cisoperatorapiv1.ClusterScanBenchmar
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name.SafeConcatName(cisoperatorapiv1.CustomBenchmarkConfigMap, clusterscan.Name),
-			Namespace: cisoperatorapiv1.ClusterScanNS,
+			Namespace: clusterscan.Namespace,
 		},
 		Data: userConfigmap.Data,
 	}
