@@ -31,11 +31,11 @@ const (
 	ConfigFileName      = "config.json"
 )
 
-func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisoperatorapiv1.ClusterScanProfile, clusterscanbenchmark *cisoperatorapiv1.ClusterScanBenchmark, _ string, imageConfig *cisoperatorapiv1.ScanImageConfig, configmapsClient wcorev1.ConfigMapController) (cmMap map[string]*corev1.ConfigMap, err error) {
+func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisoperatorapiv1.ClusterScanProfile, clusterscanbenchmark *cisoperatorapiv1.ClusterScanBenchmark, _ string, imageConfig *cisoperatorapiv1.ScanImageConfig, configmapsClient wcorev1.ConfigMapController, clusterScanNS string) (cmMap map[string]*corev1.ConfigMap, err error) {
 	cmMap = make(map[string]*corev1.ConfigMap)
 
 	configdata := map[string]interface{}{
-		"namespace":        imageConfig.Namespace,
+		"namespace":        clusterScanNS,
 		"name":             name.SafeConcatName(cisoperatorapiv1.ClusterScanConfigMap, clusterscan.Name),
 		"runName":          name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":          "rancher-cis-benchmark",
@@ -54,7 +54,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 	customBenchmarkConfigMapData := make(map[string]string)
 	if clusterscanbenchmark.Spec.CustomBenchmarkConfigMapName != "" {
 		isCustomBenchmark = true
-		customcm, err := getCustomBenchmarkConfigMap(clusterscanbenchmark, clusterscan, configmapsClient, imageConfig.Namespace)
+		customcm, err := getCustomBenchmarkConfigMap(clusterscanbenchmark, clusterscan, configmapsClient, clusterScanNS)
 		if err != nil {
 			return cmMap, err
 		}
@@ -63,7 +63,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 	}
 
 	plugindata := map[string]interface{}{
-		"namespace":                    imageConfig.Namespace,
+		"namespace":                    clusterScanNS,
 		"name":                         name.SafeConcatName(cisoperatorapiv1.ClusterScanPluginsConfigMap, clusterscan.Name),
 		"runName":                      name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":                      "rancher-cis-benchmark",
@@ -89,7 +89,7 @@ func NewConfigMaps(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile
 		if err != nil {
 			return cmMap, err
 		}
-		skipConfigcm = getConfigMapObject(getOverrideConfigMapName(clusterscan), imageConfig.Namespace, string(skipDataBytes))
+		skipConfigcm = getConfigMapObject(getOverrideConfigMapName(clusterscan), clusterScanNS, string(skipDataBytes))
 		cmMap["skipConfigcm"] = skipConfigcm
 	}
 
