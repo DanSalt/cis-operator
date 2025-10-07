@@ -105,7 +105,7 @@ func (c *Controller) handleClusterScans(ctx context.Context) error {
 					c.setClusterScanStatusDisplay(obj)
 					return objects, obj.Status, nil
 				}
-				service, err := ciscore.NewService(obj, profile, c.Name)
+				service, err := ciscore.NewService(obj, profile, c.Name, c.Namespace)
 				if err != nil {
 					v1.ClusterScanConditionReconciling.True(obj)
 					return objects, obj.Status, fmt.Errorf("Error when creating Service: %w", err)

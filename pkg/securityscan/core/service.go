@@ -12,10 +12,10 @@ import (
 //go:embed templates/service.template
 var serviceTemplate string
 
-func NewService(clusterscan *cisoperatorapiv1.ClusterScan, _ *cisoperatorapiv1.ClusterScanProfile, _ string) (service *corev1.Service, err error) {
+func NewService(clusterscan *cisoperatorapiv1.ClusterScan, _ *cisoperatorapiv1.ClusterScanProfile, _ string, namespace string) (service *corev1.Service, err error) {
 
 	servicedata := map[string]interface{}{
-		"namespace": clusterscan.Namespace,
+		"namespace": namespace,
 		"name":      cisoperatorapiv1.ClusterScanService,
 		"runName":   name.SafeConcatName("security-scan-runner", clusterscan.Name),
 		"appName":   "rancher-cis-benchmark",

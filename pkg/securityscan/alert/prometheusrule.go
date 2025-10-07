@@ -22,7 +22,7 @@ const templateName = "prometheusrule.template"
 
 func NewPrometheusRule(clusterscan *cisoperatorapiv1.ClusterScan, clusterscanprofile *cisoperatorapiv1.ClusterScanProfile, imageConfig *cisoperatorapiv1.ScanImageConfig) (*monitoringv1.PrometheusRule, error) {
 	configdata := map[string]interface{}{
-		"namespace":       clusterscan.Namespace,
+		"namespace":       imageConfig.Namespace,
 		"name":            name.SafeConcatName("rancher-cis-alerts", clusterscan.Name),
 		"severity":        imageConfig.AlertSeverity,
 		"scanName":        clusterscan.Name,
