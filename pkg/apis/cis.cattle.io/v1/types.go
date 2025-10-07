@@ -163,5 +163,4 @@ type ScanImageConfig struct {
 	AlertSeverity        string
 	ClusterName          string
 	AlertEnabled         bool
-	Namespace            string
 }
