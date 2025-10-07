@@ -96,7 +96,7 @@ func (c *Controller) handleClusterScans(ctx context.Context) error {
 					v1.ClusterScanConditionReconciling.True(obj)
 					return objects, obj.Status, fmt.Errorf("Error when getting Benchmark: %w", err)
 				}
-				cmMap, err := ciscore.NewConfigMaps(obj, profile, benchmark, c.Name, c.ImageConfig, c.configmaps)
+				cmMap, err := ciscore.NewConfigMaps(obj, profile, benchmark, c.Name, c.ImageConfig, c.configmaps, c.Namespace)
 				if err != nil {
 					v1.ClusterScanConditionFailed.True(obj)
 					message := fmt.Sprintf("Error when creating ConfigMaps: %v", err)
@@ -123,7 +123,7 @@ func (c *Controller) handleClusterScans(ctx context.Context) error {
 					obj.Spec.ScheduledScanConfig.ScanAlertRule != nil &&
 					(obj.Spec.ScheduledScanConfig.ScanAlertRule.AlertOnComplete || obj.Spec.ScheduledScanConfig.ScanAlertRule.AlertOnFailure) &&
 					obj.Status.ScanAlertingRuleName == "" {
-					alertRule, err := cisalert.NewPrometheusRule(obj, profile, c.ImageConfig)
+					alertRule, err := cisalert.NewPrometheusRule(obj, profile, c.ImageConfig, c.Namespace)
 					if err != nil {
 						v1.ClusterScanConditionReconciling.True(obj)
 						return objects, obj.Status, fmt.Errorf("Error when trying to create a PrometheusRule: %w", err)
